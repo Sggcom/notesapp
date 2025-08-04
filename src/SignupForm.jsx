@@ -1,12 +1,14 @@
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ FIX: Added
+import { useNavigate } from "react-router-dom"; 
 import image from './images.jpg';
-
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"; 
 const SignupForm = ({ onSwitch }) => {
-  const navigate = useNavigate(); // ✅ FIX: Added navigate
+  const navigate = useNavigate(); 
+  const auth = getAuth();
 
   const schema = yup.object().shape({
     firstName: yup.string().required("First name is required"),
@@ -21,26 +23,32 @@ const SignupForm = ({ onSwitch }) => {
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: yupResolver(schema) });
+    const onSubmit = async (data) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    const user = userCredential.user;
 
-  const onSubmit = (data) => {
-    const emailKey = data.email.toLowerCase();
-    const existingUser = JSON.parse(localStorage.getItem(emailKey));
-    if (existingUser) {
-      alert("Email is already registered!");
-    } else {
-      const userData = {
-        fname: data.firstName,
-        lname: data.lastName,
-        email: emailKey,
-        password: data.password,
-      };
-      localStorage.setItem(emailKey, JSON.stringify(userData));
-      alert(`${data.firstName} ${data.lastName} has been successfully registered`);
-      localStorage.setItem("token", data.email);
-      navigate("/dashboard");
-    }
-  };
+    //  Save token to localStorage
+    localStorage.setItem("token", user.email);
 
+    await setDoc(doc(db, "users", user.uid), {
+      fname: data.firstName,
+      lname: data.lastName,
+      email: user.email,
+      country: data.country,
+      language: data.language,
+      aboutYou: data.aboutYou,
+    });
+
+    alert(`${data.firstName} ${data.lastName} registered successfully!`);
+    navigate("/dashboard"); //  Navigate to dashboard
+  } catch (error) {
+    console.error("Signup Error:", error.message);
+    alert(error.message);
+  }
+};
+
+ 
   const countries = ["Pakistan", "India", "USA", "UK","Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
     "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
     "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
@@ -114,11 +122,11 @@ const SignupForm = ({ onSwitch }) => {
           <p className="text-red-500 text-sm">{errors.aboutYou?.message}</p>
         </div>
 
-        <button type="submit" className="w-60 bg-green-600 text-white py-2 rounded hover:bg-green-700 transition block mx-auto">
+        <button type="submit" className="w-40 sm:w-60  bg-green-600 text-white py-2 rounded hover:bg-green-700 transition block mx-auto">
           Sign Up
         </button>
         <p className="text-center mt-4 text-sm">Already have an account?</p>
-        <button type="button" onClick={onSwitch} className="w-60 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition block mx-auto">
+        <button type="button" onClick={onSwitch} className="w-40 sm:w-60  bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition block mx-auto">
           Login
         </button>
       </form>

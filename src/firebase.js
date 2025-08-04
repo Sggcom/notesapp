@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-
+import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyCMhQ8qP-gCESRlF9j1nWGI2JmIorYtlmI",
   authDomain: "notes-app-908b2.firebaseapp.com",
@@ -9,6 +9,4 @@ const firebaseConfig = {
   appId: "1:805897419194:web:bfa3804dc71842afd54583"
 };
  const app = initializeApp(firebaseConfig);  
- const db = firebase.firestore();
-
-export default db;                                                 
+export const db = getFirestore(app);                                                 
